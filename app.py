@@ -6,6 +6,8 @@ All UI elements are in English.
 """
 
 import streamlit as st
+import os
+import json
 import naver_crawler as nc
 
 # Set page configuration - Wide layout for clean grid display
