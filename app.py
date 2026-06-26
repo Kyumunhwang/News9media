@@ -1,0 +1,279 @@
+"""Premium News RSS Reader - Pinterest Design System.
+
+Dedicated RSS feed aggregator designed for 9 top Korean media outlets.
+Styling complies fully with the Pinterest Design System tokens (Design.md).
+All UI elements are in English.
+"""
+
+import streamlit as st
+import naver_crawler as nc
+
+# Set page configuration - Wide layout for clean grid display
+st.set_page_config(
+    page_title="Premium News Grid Reader",
+    page_icon="📰",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Custom Pinterest Theme Styles
+st.markdown(
+    """
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base typography & Canvas Off-White wash */
+        html, body, [class*="css"], .stMarkdown {
+            font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+            background-color: #fbfbf9 !important; /* colors.surface-soft */
+        }
+        
+        .main {
+            background-color: #fbfbf9 !important;
+        }
+        
+        /* App Branding - Pinterest tight letter-spacing display headline */
+        .app-title-container {
+            text-align: center;
+            padding: 40px 0 15px 0;
+        }
+        
+        .app-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #262622; /* colors.charcoal */
+            letter-spacing: -1.2px; /* tight tracking display signature */
+            margin-bottom: 6px;
+        }
+        
+        .app-subtitle {
+            font-size: 1.02rem;
+            color: #62625b; /* colors.mute */
+            font-weight: 400;
+            margin-bottom: 25px;
+        }
+        
+        /* Responsive Grid layout */
+        .rss-grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 24px;
+            margin-top: 10px;
+            padding: 0 15px;
+        }
+        
+        /* Level 0 Flat Card - no shadow, 1px solid hairline */
+        .rss-card {
+            background-color: #ffffff; /* colors.canvas */
+            border: 1px solid #dadad3; /* colors.hairline */
+            border-radius: 16px; /* rounded.md */
+            padding: 24px;
+            box-shadow: none !important; /* Elevation 0 - flat content surface */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 480px;
+            transition: border-color 0.15s ease;
+        }
+        
+        .rss-card:hover {
+            border-color: #e60023; /* hover accent to Pinterest Red */
+        }
+        
+        .rss-card-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #000000; /* colors.ink */
+            letter-spacing: -0.8px;
+            border-bottom: 2px solid #dadad3; /* colors.hairline */
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Pill Badges - rounded.full */
+        .rss-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 9999px; /* rounded.full */
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Direct Badge - uses brand Pinterest Red accent */
+        .rss-badge-direct {
+            background-color: #e60023; /* colors.primary */
+            color: #ffffff; /* colors.on-dark */
+        }
+        
+        /* Fallback Badge - muted secondary cream-gray */
+        .rss-badge-fallback {
+            background-color: #e5e5e0; /* colors.secondary-bg */
+            color: #62625b; /* colors.mute */
+        }
+        
+        .articles-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        
+        .articles-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .articles-container::-webkit-scrollbar-thumb {
+            background-color: #e5e5e0;
+            border-radius: 4px;
+        }
+        
+        /* Article item block */
+        .article-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e0; /* colors.hairline-soft */
+        }
+        
+        .article-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        /* Article Title - Charcoal color, Hover turns to Pinterest Red */
+        .article-title {
+            color: #262622 !important; /* colors.charcoal */
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 5px;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.15s ease;
+        }
+        
+        .article-title:hover {
+            color: #e60023 !important; /* colors.primary */
+            text-decoration: underline;
+        }
+        
+        .article-desc {
+            font-size: 0.82rem;
+            color: #33332e; /* colors.body */
+            line-height: 1.45;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .article-meta {
+            font-size: 0.72rem;
+            color: #62625b; /* colors.mute */
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Header Title Widget
+st.markdown(
+    """
+    <div class="app-title-container">
+        <h1 class="app-title">Premium News RSS Grid</h1>
+        <p class="app-subtitle">Real-time aggregate feeds from 9 major Korean media channels. Auto-realigns on mobile screens.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# Outlets Index configuration
+media_list = [
+    {"id": "chosun", "name": "Chosun Ilbo (조선일보)"},
+    {"id": "donga", "name": "Donga Ilbo (동아일보)"},
+    {"id": "hani", "name": "Hankyoreh (한겨레)"},
+    {"id": "khan", "name": "Kyunghyang (경향신문)"},
+    {"id": "maekyung", "name": "Maeil Business (매일경제)"},
+    {"id": "hankyung", "name": "Korea Economic (한국경제)"},
+    {"id": "yonhapnewstv", "name": "Yonhap News TV (연합뉴스TV)"},
+    {"id": "ytn", "name": "YTN (구글뉴스 RSS)"},
+    {"id": "ohmynews", "name": "OhmyNews (오마이뉴스)"}
+]
+
+# RSS Fetch wrapper with st.cache_data to handle network speed for all 9 concurrent feeds
+@st.cache_data(ttl=300)
+def get_cached_rss_feed(media_id: str):
+    return nc.fetch_media_rss(media_id)
+
+# Perform concurrent data fetching with visual progress bar
+with st.spinner("Fetching all 9 news channel feeds..."):
+    cards_html = ""
+    for media in media_list:
+        feed = get_cached_rss_feed(media["id"])
+        
+        if feed["success"]:
+            # Badge rendering based on connection mode
+            if feed["fallback_active"]:
+                badge_html = '<span class="rss-badge rss-badge-fallback">Fallback</span>'
+            else:
+                badge_html = '<span class="rss-badge rss-badge-direct">Direct</span>'
+                
+            # Render up to 5 articles inside the card
+            articles_html = ""
+            for art in feed["articles"][:5]:
+                articles_html += f"""
+                <div class="article-item">
+                    <a class="article-title" href="{art['link']}" target="_blank" title="{art['title']}">
+                        {art['title']}
+                    </a>
+                    <div class="article-desc">
+                        {art['description'] or 'No summary text available.'}
+                    </div>
+                    <div class="article-meta">
+                        {art['pub_date']}
+                    </div>
+                </div>
+                """
+                
+            cards_html += f"""
+            <div class="rss-card">
+                <div>
+                    <div class="rss-card-header">
+                        <div>{feed['media_name_en']}</div>
+                        {badge_html}
+                    </div>
+                    <div class="articles-container">
+                        {articles_html if articles_html else '<p style="font-size:0.85rem; color:#62625b; text-align:center; padding-top:40px;">No articles found.</p>'}
+                    </div>
+                </div>
+                <div style="font-size:0.75rem; color:#62625b; text-align:right; border-top:1px solid #e5e5e0; padding-top:8px; margin-top:8px; font-weight:500;">
+                    {feed['media_name_ko']}
+                </div>
+            </div>
+            """
+        else:
+            cards_html += f"""
+            <div class="rss-card">
+                <div>
+                    <div class="rss-card-header" style="border-bottom-color: #9e0a0a;">
+                        <div>{media['name']}</div>
+                        <span class="rss-badge" style="background-color: #ffe3e3; color: #9e0a0a;">Error</span>
+                    </div>
+                    <p style="font-size:0.85rem; color:#9e0a0a; padding-top:20px; font-weight: 500;">
+                        Failed to fetch RSS: {feed['error']}
+                    </p>
+                </div>
+            </div>
+            """
+
+    # Print the responsive grid container with clean closing tag
+    full_html = f'<div class="rss-grid-container">{cards_html}</div>'
+    # Strip newlines and extra spaces to prevent markdown parser from outputting raw tags on screen
+    clean_html = " ".join(full_html.split())
+    st.markdown(clean_html, unsafe_allow_html=True)
