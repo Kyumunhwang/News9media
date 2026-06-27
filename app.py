@@ -257,14 +257,12 @@ with st.spinner("Fetching all 9 news channel feeds..."):
                 
             cards_html += f"""
             <div class="rss-card" id="card-{media['id']}">
-                <div>
-                    <div class="rss-card-header">
-                        <div>{feed['media_name_en']}</div>
-                        {badge_html}
-                    </div>
-                    <div class="articles-container">
-                        {articles_html if articles_html else '<p style="font-size:0.85rem; color:#62625b; text-align:center; padding-top:40px;">No articles found.</p>'}
-                    </div>
+                <div class="rss-card-header">
+                    <div>{feed['media_name_en']}</div>
+                    {badge_html}
+                </div>
+                <div class="articles-container">
+                    {articles_html if articles_html else '<p style="font-size:0.85rem; color:#62625b; text-align:center; padding-top:40px;">No articles found.</p>'}
                 </div>
                 <div style="font-size:0.75rem; color:#62625b; text-align:right; border-top:1px solid #e5e5e0; padding-top:8px; margin-top:8px; font-weight:500;">
                     {feed['media_name_ko']}
@@ -274,15 +272,13 @@ with st.spinner("Fetching all 9 news channel feeds..."):
         else:
             cards_html += f"""
             <div class="rss-card" id="card-{media['id']}">
-                <div>
-                    <div class="rss-card-header" style="border-bottom-color: #9e0a0a;">
-                        <div>{media['name']}</div>
-                        <span class="rss-badge" style="background-color: #ffe3e3; color: #9e0a0a;">Error</span>
-                    </div>
-                    <p style="font-size:0.85rem; color:#9e0a0a; padding-top:20px; font-weight: 500;">
-                        Failed to fetch RSS: {feed['error']}
-                    </p>
+                <div class="rss-card-header" style="border-bottom-color: #9e0a0a;">
+                    <div>{media['name']}</div>
+                    <span class="rss-badge" style="background-color: #ffe3e3; color: #9e0a0a;">Error</span>
                 </div>
+                <p style="font-size:0.85rem; color:#9e0a0a; padding-top:20px; font-weight: 500;">
+                    Failed to fetch RSS: {feed['error']}
+                </p>
             </div>
             """
 
