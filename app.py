@@ -130,7 +130,8 @@ st.markdown(
         
         .articles-container {
             flex-grow: 1;
-            overflow-y: auto;
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
             padding-right: 4px;
         }
         
@@ -234,9 +235,9 @@ with st.spinner("Fetching all 9 news channel feeds..."):
         if feed["success"]:
             # Badge button rendering based on connection mode, both text to "Scroll" with styling
             if feed["fallback_active"]:
-                badge_html = f'<button class="rss-badge rss-badge-scroll rss-badge-fallback" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
+                badge_html = f'<button type="button" class="rss-badge rss-badge-scroll rss-badge-fallback" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
             else:
-                badge_html = f'<button class="rss-badge rss-badge-scroll" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
+                badge_html = f'<button type="button" class="rss-badge rss-badge-scroll" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
                 
             # Render up to 15 articles inside the card for scrolling list
             articles_html = ""
@@ -257,14 +258,12 @@ with st.spinner("Fetching all 9 news channel feeds..."):
                 
             cards_html += f"""
             <div class="rss-card" id="card-{media['id']}">
-                <div>
-                    <div class="rss-card-header">
-                        <div>{feed['media_name_en']}</div>
-                        {badge_html}
-                    </div>
-                    <div class="articles-container">
-                        {articles_html if articles_html else '<p style="font-size:0.85rem; color:#62625b; text-align:center; padding-top:40px;">No articles found.</p>'}
-                    </div>
+                <div class="rss-card-header">
+                    <div>{feed['media_name_en']}</div>
+                    {badge_html}
+                </div>
+                <div class="articles-container">
+                    {articles_html if articles_html else '<p style="font-size:0.85rem; color:#62625b; text-align:center; padding-top:40px;">No articles found.</p>'}
                 </div>
                 <div style="font-size:0.75rem; color:#62625b; text-align:right; border-top:1px solid #e5e5e0; padding-top:8px; margin-top:8px; font-weight:500;">
                     {feed['media_name_ko']}
@@ -274,15 +273,13 @@ with st.spinner("Fetching all 9 news channel feeds..."):
         else:
             cards_html += f"""
             <div class="rss-card" id="card-{media['id']}">
-                <div>
-                    <div class="rss-card-header" style="border-bottom-color: #9e0a0a;">
-                        <div>{media['name']}</div>
-                        <span class="rss-badge" style="background-color: #ffe3e3; color: #9e0a0a;">Error</span>
-                    </div>
-                    <p style="font-size:0.85rem; color:#9e0a0a; padding-top:20px; font-weight: 500;">
-                        Failed to fetch RSS: {feed['error']}
-                    </p>
+                <div class="rss-card-header" style="border-bottom-color: #9e0a0a;">
+                    <div>{media['name']}</div>
+                    <span class="rss-badge" style="background-color: #ffe3e3; color: #9e0a0a;">Error</span>
                 </div>
+                <p style="font-size:0.85rem; color:#9e0a0a; padding-top:20px; font-weight: 500;">
+                    Failed to fetch RSS: {feed['error']}
+                </p>
             </div>
             """
 
@@ -295,6 +292,9 @@ with st.spinner("Fetching all 9 news channel feeds..."):
     function scrollFeed(mediaId) {
         const card = document.getElementById('card-' + mediaId);
         if (card) {
+            // Smoothly align the selected news card to the top/center of the screen
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
             const container = card.querySelector('.articles-container');
             if (container) {
                 const currentScroll = container.scrollTop;
