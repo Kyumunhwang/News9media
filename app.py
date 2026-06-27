@@ -130,7 +130,8 @@ st.markdown(
         
         .articles-container {
             flex-grow: 1;
-            overflow-y: auto;
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
             padding-right: 4px;
         }
         
@@ -234,9 +235,9 @@ with st.spinner("Fetching all 9 news channel feeds..."):
         if feed["success"]:
             # Badge button rendering based on connection mode, both text to "Scroll" with styling
             if feed["fallback_active"]:
-                badge_html = f'<button class="rss-badge rss-badge-scroll rss-badge-fallback" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
+                badge_html = f'<button type="button" class="rss-badge rss-badge-scroll rss-badge-fallback" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
             else:
-                badge_html = f'<button class="rss-badge rss-badge-scroll" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
+                badge_html = f'<button type="button" class="rss-badge rss-badge-scroll" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
                 
             # Render up to 15 articles inside the card for scrolling list
             articles_html = ""
@@ -291,6 +292,9 @@ with st.spinner("Fetching all 9 news channel feeds..."):
     function scrollFeed(mediaId) {
         const card = document.getElementById('card-' + mediaId);
         if (card) {
+            // Smoothly align the selected news card to the top/center of the screen
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
             const container = card.querySelector('.articles-container');
             if (container) {
                 const currentScroll = container.scrollTop;
