@@ -196,13 +196,21 @@ st.markdown(
         /* ==========================================================================
            Dark Mode Variables & Rules (Pinterest Dark Theme compatible)
            ========================================================================== */
-        body.dark-mode, body.dark-mode .stMarkdown, body.dark-mode [class*="css"] {
+        /* Force background overrides for Streamlit base layout in dark mode */
+        body.dark-mode,
+        body.dark-mode .stApp,
+        body.dark-mode [data-testid="stApp"],
+        body.dark-mode .main,
+        body.dark-mode [class*="st-"] {
             background-color: #181816 !important; /* Dark Canvas */
             color: #f5f5f0 !important;
         }
         
-        body.dark-mode .main {
+        /* stApp has its own dark-mode class toggled directly */
+        .stApp.dark-mode,
+        [data-testid="stApp"].dark-mode {
             background-color: #181816 !important;
+            color: #f5f5f0 !important;
         }
         
         body.dark-mode .app-title {
@@ -274,15 +282,18 @@ st.markdown(
             transform: scale(0.95);
         }
         
-        body.dark-mode .theme-toggle-btn {
-            background-color: #262624;
-            border-color: #44443f;
-            color: #ffffff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        /* When body is dark-mode, apply styles to button */
+        body.dark-mode .theme-toggle-btn,
+        .stApp.dark-mode .theme-toggle-btn {
+            background-color: #262624 !important;
+            border-color: #44443f !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
         }
         
-        body.dark-mode .theme-toggle-btn:hover {
-            background-color: #333330;
+        body.dark-mode .theme-toggle-btn:hover,
+        .stApp.dark-mode .theme-toggle-btn:hover {
+            background-color: #333330 !important;
         }
         
         /* Mobile adjustment for toggle button */
@@ -302,7 +313,7 @@ st.markdown(
 st.markdown(
     """
     <div class="app-title-container" style="position: relative;">
-        <button type="button" id="theme-btn" class="theme-toggle-btn" onclick="toggleTheme()">🌙 Dark</button>
+        <button type="button" id="theme-btn" class="theme-toggle-btn">🌙 Dark</button>
         <h1 class="app-title">Premium News RSS Grid</h1>
         <p class="app-subtitle">Real-time aggregate feeds from 9 major Korean media channels. Auto-realigns on mobile screens.</p>
     </div>
@@ -409,30 +420,70 @@ with st.spinner("Fetching all 9 news channel feeds..."):
         }
     }
     
+    // Global event delegation to bypass React element recreation
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'theme-btn') {
+            toggleTheme();
+        }
+    });
+
     function toggleTheme() {
         const body = document.body;
-        const btn = document.getElementById('theme-btn');
-        if (body.classList.contains('dark-mode')) {
-            body.classList.remove('dark-mode');
-            if (btn) btn.innerHTML = '🌙 Dark';
+        const isDark = body.classList.contains('dark-mode');
+        
+        if (isDark) {
             localStorage.setItem('dark-theme', 'disabled');
+            applyThemeState(false);
         } else {
-            body.classList.add('dark-mode');
-            if (btn) btn.innerHTML = '☀️ Light';
             localStorage.setItem('dark-theme', 'enabled');
+            applyThemeState(true);
         }
     }
     
-    // Auto-apply stored theme immediately on render
-    (function() {
-        const darkTheme = localStorage.getItem('dark-theme');
+    function applyThemeState(isDark) {
         const body = document.body;
+        const app = document.querySelector('.stApp') || document.querySelector('[data-testid="stApp"]');
         const btn = document.getElementById('theme-btn');
-        if (darkTheme === 'enabled') {
-            body.classList.add('dark-mode');
+        
+        if (isDark) {
+            if (!body.classList.contains('dark-mode')) body.classList.add('dark-mode');
+            if (app && !app.classList.contains('dark-mode')) app.classList.add('dark-mode');
             if (btn) btn.innerHTML = '☀️ Light';
+        } else {
+            if (body.classList.contains('dark-mode')) body.classList.remove('dark-mode');
+            if (app && app.classList.contains('dark-mode')) app.classList.remove('dark-mode');
+            if (btn) btn.innerHTML = '🌙 Dark';
         }
-    })();
+    }
+    
+    // MutationObserver: Locks the dark-mode class against React virtual DOM overwrites
+    const themeObserver = new MutationObserver(function(mutations) {
+        const darkTheme = localStorage.getItem('dark-theme');
+        const shouldBeDark = (darkTheme === 'enabled');
+        const body = document.body;
+        const hasDarkClass = body.classList.contains('dark-mode');
+        
+        if (shouldBeDark !== hasDarkClass) {
+            applyThemeState(shouldBeDark);
+        } else if (shouldBeDark) {
+            const app = document.querySelector('.stApp') || document.querySelector('[data-testid="stApp"]');
+            if (app && !app.classList.contains('dark-mode')) {
+                app.classList.add('dark-mode');
+            }
+            const btn = document.getElementById('theme-btn');
+            if (btn && btn.innerHTML !== '☀️ Light') {
+                btn.innerHTML = '☀️ Light';
+            }
+        }
+    });
+    
+    themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    
+    // Interval check: Double-ensures the state remains synced during dynamic transitions
+    setInterval(function() {
+        const darkTheme = localStorage.getItem('dark-theme');
+        applyThemeState(darkTheme === 'enabled');
+    }, 250);
     </script>
     """
     
