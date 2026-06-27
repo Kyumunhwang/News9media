@@ -104,16 +104,28 @@ st.markdown(
             letter-spacing: 0.5px;
         }
         
-        /* Direct Badge - uses brand Pinterest Red accent */
-        .rss-badge-direct {
+        /* Scroll Badge/Button - uses brand Pinterest Red, interactive button */
+        .rss-badge-scroll {
             background-color: #e60023; /* colors.primary */
             color: #ffffff; /* colors.on-dark */
+            border: none;
+            cursor: pointer;
+            outline: none;
+            transition: background-color 0.15s ease, transform 0.1s ease;
         }
         
-        /* Fallback Badge - muted secondary cream-gray */
+        .rss-badge-scroll:hover {
+            background-color: #ad0016; /* Darker red */
+        }
+        
+        .rss-badge-scroll:active {
+            transform: scale(0.95);
+        }
+        
+        /* Fallback modifier for Scroll Badge/Button */
         .rss-badge-fallback {
-            background-color: #e5e5e0; /* colors.secondary-bg */
-            color: #62625b; /* colors.mute */
+            background-color: #e5e5e0 !important; /* colors.secondary-bg */
+            color: #62625b !important; /* colors.mute */
         }
         
         .articles-container {
@@ -220,15 +232,15 @@ with st.spinner("Fetching all 9 news channel feeds..."):
         feed = get_cached_rss_feed(media["id"])
         
         if feed["success"]:
-            # Badge rendering based on connection mode
+            # Badge button rendering based on connection mode, both text to "Scroll" with styling
             if feed["fallback_active"]:
-                badge_html = '<span class="rss-badge rss-badge-fallback">Fallback</span>'
+                badge_html = f'<button class="rss-badge rss-badge-scroll rss-badge-fallback" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
             else:
-                badge_html = '<span class="rss-badge rss-badge-direct">Direct</span>'
+                badge_html = f'<button class="rss-badge rss-badge-scroll" onclick="scrollFeed(\'{media["id"]}\')">Scroll</button>'
                 
-            # Render up to 5 articles inside the card
+            # Render up to 15 articles inside the card for scrolling list
             articles_html = ""
-            for art in feed["articles"][:5]:
+            for art in feed["articles"][:15]:
                 articles_html += f"""
                 <div class="article-item">
                     <a class="article-title" href="{art['link']}" target="_blank" title="{art['title']}">
@@ -244,7 +256,7 @@ with st.spinner("Fetching all 9 news channel feeds..."):
                 """
                 
             cards_html += f"""
-            <div class="rss-card">
+            <div class="rss-card" id="card-{media['id']}">
                 <div>
                     <div class="rss-card-header">
                         <div>{feed['media_name_en']}</div>
@@ -261,7 +273,7 @@ with st.spinner("Fetching all 9 news channel feeds..."):
             """
         else:
             cards_html += f"""
-            <div class="rss-card">
+            <div class="rss-card" id="card-{media['id']}">
                 <div>
                     <div class="rss-card-header" style="border-bottom-color: #9e0a0a;">
                         <div>{media['name']}</div>
@@ -276,6 +288,28 @@ with st.spinner("Fetching all 9 news channel feeds..."):
 
     # Print the responsive grid container with clean closing tag
     full_html = f'<div class="rss-grid-container">{cards_html}</div>'
+    
+    # Javascript code for handling feed scroll animation smoothly
+    js_code = """
+    <script>
+    function scrollFeed(mediaId) {
+        const card = document.getElementById('card-' + mediaId);
+        if (card) {
+            const container = card.querySelector('.articles-container');
+            if (container) {
+                const currentScroll = container.scrollTop;
+                const maxScroll = container.scrollHeight - container.clientHeight;
+                if (currentScroll >= maxScroll - 5) {
+                    container.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    container.scrollBy({ top: 180, behavior: 'smooth' });
+                }
+            }
+        }
+    }
+    </script>
+    """
+    
     # Strip newlines and extra spaces to prevent markdown parser from outputting raw tags on screen
     clean_html = " ".join(full_html.split())
-    st.markdown(clean_html, unsafe_allow_html=True)
+    st.markdown(clean_html + js_code, unsafe_allow_html=True)

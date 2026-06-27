@@ -378,7 +378,7 @@ def fetch_media_rss(media_id: str) -> Dict[str, Any]:
     try:
         root = ET.fromstring(xml_content)
         articles = []
-        for item in root.findall(".//item")[:5]:  # Limit to 5 articles as designed for grid
+        for item in root.findall(".//item")[:15]:  # Limit to 15 articles for scrollable lists
             title_elem = item.find("title")
             link_elem = item.find("link")
             pub_date_elem = item.find("pubDate")
