@@ -192,15 +192,117 @@ st.markdown(
             font-size: 0.72rem;
             color: #62625b; /* colors.mute */
         }
+        
+        /* ==========================================================================
+           Dark Mode Variables & Rules (Pinterest Dark Theme compatible)
+           ========================================================================== */
+        body.dark-mode, body.dark-mode .stMarkdown, body.dark-mode [class*="css"] {
+            background-color: #181816 !important; /* Dark Canvas */
+            color: #f5f5f0 !important;
+        }
+        
+        body.dark-mode .main {
+            background-color: #181816 !important;
+        }
+        
+        body.dark-mode .app-title {
+            color: #f5f5f0 !important;
+        }
+        
+        body.dark-mode .app-subtitle {
+            color: #a5a59e !important;
+        }
+        
+        body.dark-mode .rss-card {
+            background-color: #262624 !important; /* Dark Card */
+            border-color: #44443f !important;
+        }
+        
+        body.dark-mode .rss-card-header {
+            color: #ffffff !important;
+            border-bottom-color: #44443f !important;
+        }
+        
+        body.dark-mode .article-title {
+            color: #e5e5e0 !important;
+        }
+        
+        body.dark-mode .article-title:hover {
+            color: #ff3b5c !important; /* Premium bright red for dark mode hover */
+        }
+        
+        body.dark-mode .article-desc {
+            color: #c5c5be !important;
+        }
+        
+        body.dark-mode .article-meta {
+            color: #8c8c85 !important;
+        }
+        
+        body.dark-mode .article-item {
+            border-bottom-color: #44443f !important;
+        }
+        
+        body.dark-mode .rss-badge-fallback {
+            background-color: #3e3e3a !important;
+            color: #a5a59e !important;
+        }
+        
+        /* Dark mode toggle button styles */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #ffffff;
+            border: 1px solid #dadad3;
+            border-radius: 9999px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.15s ease, transform 0.1s ease;
+            z-index: 999;
+        }
+        
+        .theme-toggle-btn:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-1px);
+        }
+        
+        .theme-toggle-btn:active {
+            transform: scale(0.95);
+        }
+        
+        body.dark-mode .theme-toggle-btn {
+            background-color: #262624;
+            border-color: #44443f;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        body.dark-mode .theme-toggle-btn:hover {
+            background-color: #333330;
+        }
+        
+        /* Mobile adjustment for toggle button */
+        @media (max-width: 480px) {
+            .theme-toggle-btn {
+                position: static;
+                display: block;
+                margin: 0 auto 15px auto;
+            }
+        }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Header Title Widget
+# Header Title Widget with interactive theme toggle
 st.markdown(
     """
-    <div class="app-title-container">
+    <div class="app-title-container" style="position: relative;">
+        <button type="button" id="theme-btn" class="theme-toggle-btn" onclick="toggleTheme()">🌙 Dark</button>
         <h1 class="app-title">Premium News RSS Grid</h1>
         <p class="app-subtitle">Real-time aggregate feeds from 9 major Korean media channels. Auto-realigns on mobile screens.</p>
     </div>
@@ -286,13 +388,12 @@ with st.spinner("Fetching all 9 news channel feeds..."):
     # Print the responsive grid container with clean closing tag
     full_html = f'<div class="rss-grid-container">{cards_html}</div>'
     
-    # Javascript code for handling feed scroll animation smoothly
+    # Javascript code for handling feed scroll animation and dynamic dark-mode toggling
     js_code = """
     <script>
     function scrollFeed(mediaId) {
         const card = document.getElementById('card-' + mediaId);
         if (card) {
-            // Smoothly align the selected news card to the top/center of the screen
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
             const container = card.querySelector('.articles-container');
@@ -307,6 +408,31 @@ with st.spinner("Fetching all 9 news channel feeds..."):
             }
         }
     }
+    
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('theme-btn');
+        if (body.classList.contains('dark-mode')) {
+            body.classList.remove('dark-mode');
+            if (btn) btn.innerHTML = '🌙 Dark';
+            localStorage.setItem('dark-theme', 'disabled');
+        } else {
+            body.classList.add('dark-mode');
+            if (btn) btn.innerHTML = '☀️ Light';
+            localStorage.setItem('dark-theme', 'enabled');
+        }
+    }
+    
+    // Auto-apply stored theme immediately on render
+    (function() {
+        const darkTheme = localStorage.getItem('dark-theme');
+        const body = document.body;
+        const btn = document.getElementById('theme-btn');
+        if (darkTheme === 'enabled') {
+            body.classList.add('dark-mode');
+            if (btn) btn.innerHTML = '☀️ Light';
+        }
+    })();
     </script>
     """
     
